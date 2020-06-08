@@ -35,6 +35,7 @@ export COMPOSER_NO_INTERACTION=1
 
 # cleanup
 mkdir -p /vagrant
+rm -rf /vagrant/failed_provisioners
 mkdir -p /vagrant/failed_provisioners
 
 rm -f /vagrant/provisioned_at
@@ -295,9 +296,9 @@ profile_setup() {
   rm -f "/home/vagrant/.bash_aliases"
   noroot cp -f "/srv/config/bash_aliases" "/home/vagrant/.bash_aliases"
 
-  echo " * Copying /srv/config/bash_aliases                      to $HOME/.bash_aliases"
-  rm -f "$HOME/.bash_aliases"
-  cp -f "/srv/config/bash_aliases" "$HOME/.bash_aliases"
+  echo " * Copying /srv/config/bash_aliases                      to ${HOME}/.bash_aliases"
+  rm -f "${HOME}/.bash_aliases"
+  cp -f "/srv/config/bash_aliases" "${HOME}/.bash_aliases"
 
   echo " * Copying /srv/config/vimrc                             to /home/vagrant/.vimrc"
   rm -f "/home/vagrant/.vimrc"
@@ -322,9 +323,9 @@ profile_setup() {
     noroot cp "/srv/config/bash_prompt" "/home/vagrant/.bash_prompt"
   fi
 
-  echo " * Copying /srv/config/ssh_known_hosts to /etc/ssh/ssh_known_hosts"
+  echo " * Copying /srv/config/ssh_known_hosts                   to /etc/ssh/ssh_known_hosts"
   cp -f /srv/config/ssh_known_hosts /etc/ssh/ssh_known_hosts
-  echo " * Copying /srv/config/sshd_config to /etc/ssh/sshd_config"
+  echo " * Copying /srv/config/sshd_config                       to /etc/ssh/sshd_config"
   cp -f /srv/config/sshd_config /etc/ssh/sshd_config
   echo " * Reloading SSH Daemon"
   systemctl reload ssh
@@ -355,7 +356,6 @@ package_install() {
     echo " * adding the mysql user"
     useradd -u 9001 -g mysql -G vboxsf -r mysql
   fi
-  id mysql
 
   mkdir -p "/etc/mysql/conf.d"
   echo " * Copying /srv/config/mysql-config/vvv-core.cnf to /etc/mysql/conf.d/vvv-core.cnf"
@@ -419,6 +419,10 @@ package_install() {
     apt-key add /srv/config/apt-keys/mongo-server-4.0.asc
   fi
 
+  # fix https://github.com/Varying-Vagrant-Vagrants/VVV/issues/2150
+  echo " * Cleaning up dpkg lock file"
+  rm /var/lib/dpkg/lock*
+
   # Update all of the package references before installing anything
   echo " * Running apt-get update..."
   apt-get -y update
@@ -432,7 +436,7 @@ package_install() {
   fi
 
   # Remove unnecessary packages
-  echo " * Removing unnecessary packages..."
+  echo " * Removing unnecessary apt packages..."
   apt-get autoremove -y
 
   # Clean up apt caches
